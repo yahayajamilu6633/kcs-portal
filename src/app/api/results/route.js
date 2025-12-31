@@ -1,22 +1,28 @@
-import clientPromise from "@/utils/db";
+import { connectDB } from "@/utils/db";
+import mongoose from "mongoose";
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db();
+    await connectDB();
+
+    const db = mongoose.connection.db;
     const results = await db.collection("results").find({}).toArray();
 
     return new Response(JSON.stringify({ results }), { status: 200 });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req) {
   try {
+    await connectDB();
+
     const { studentId, subject, score } = await req.json();
-    const client = await clientPromise;
-    const db = client.db();
+    const db = mongoose.connection.db;
 
     // Calculate grade
     let grade = "F";
@@ -35,6 +41,9 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ result }), { status: 201 });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500 }
+    );
   }
 }
