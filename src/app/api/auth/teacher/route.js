@@ -1,20 +1,18 @@
-import clientPromise from "@/utils/db";
+import { connectDB } from "@/utils/db";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-// POST /api/auth/teacher   -> login
-// PUT  /api/auth/teacher   -> signup
-
+// POST -> login
 export async function POST(req) {
   try {
-    const { username, password } = await req.json();
+    await connectDB();
 
+    const { username, password } = await req.json();
     if (!username || !password) {
       return Response.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("AB-Fashion-Design");
-
+    const db = mongoose.connection.db;
     const teacher = await db.collection("teachers").findOne({ username });
 
     if (!teacher) {
@@ -22,42 +20,39 @@ export async function POST(req) {
     }
 
     const match = await bcrypt.compare(password, teacher.password);
-
     if (!match) {
       return Response.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
     delete teacher.password;
-
     return Response.json({ user: teacher }, { status: 200 });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }
 }
 
-// SIGNUP
+// PUT -> signup
 export async function PUT(req) {
   try {
-    const { username, password, name } = await req.json();
+    await connectDB();
 
+    const { username, password, name } = await req.json();
     if (!username || !password || !name) {
       return Response.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("AB-Fashion-Design");
-
+    const db = mongoose.connection.db;
     const exists = await db.collection("teachers").findOne({ username });
     if (exists) {
       return Response.json({ error: "User already exists" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(password, 10);
-
-    const result = await db.collection("teachers").insertOne({
+    await db.collection("teachers").insertOne({
       username,
       password: hashed,
       name,
+      createdAt: new Date(),
     });
 
     return Response.json(

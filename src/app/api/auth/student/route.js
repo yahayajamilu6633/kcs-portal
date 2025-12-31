@@ -1,20 +1,18 @@
-import clientPromise from "@/utils/db";
+import { connectDB } from "@/utils/db";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-// POST /api/auth/student   -> login
-// PUT  /api/auth/student   -> signup
-
+// POST -> login
 export async function POST(req) {
   try {
-    const { username, password } = await req.json();
+    await connectDB();
 
+    const { username, password } = await req.json();
     if (!username || !password) {
       return Response.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("AB-Fashion-Design");
-
+    const db = mongoose.connection.db;
     const student = await db.collection("students").findOne({ username });
 
     if (!student) {
@@ -22,42 +20,39 @@ export async function POST(req) {
     }
 
     const match = await bcrypt.compare(password, student.password);
-
     if (!match) {
       return Response.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
     delete student.password;
-
     return Response.json({ user: student }, { status: 200 });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }
 }
 
-// SIGNUP
+// PUT -> signup
 export async function PUT(req) {
   try {
-    const { username, password, name } = await req.json();
+    await connectDB();
 
+    const { username, password, name } = await req.json();
     if (!username || !password || !name) {
       return Response.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("AB-Fashion-Design");
-
+    const db = mongoose.connection.db;
     const exists = await db.collection("students").findOne({ username });
     if (exists) {
       return Response.json({ error: "User already exists" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(password, 10);
-
-    const result = await db.collection("students").insertOne({
+    await db.collection("students").insertOne({
       username,
       password: hashed,
       name,
+      createdAt: new Date(),
     });
 
     return Response.json(
@@ -68,25 +63,21 @@ export async function PUT(req) {
     return Response.json({ error: err.message }, { status: 500 });
   }
 }
-// GET /api/auth/student  -> fetch student profile
+
+// GET -> profile
 export async function GET(req) {
   try {
-    const username = req.headers.get("x-username"); // or session/cookie later
+    await connectDB();
 
+    const username = req.headers.get("x-username");
     if (!username) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("AB-Fashion-Design");
-
+    const db = mongoose.connection.db;
     const student = await db.collection("students").findOne(
       { username },
-      {
-        projection: {
-          password: 0,
-        },
-      }
+      { projection: { password: 0 } }
     );
 
     if (!student) {
