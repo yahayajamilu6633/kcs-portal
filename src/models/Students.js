@@ -29,6 +29,12 @@ const StudentSchema = new mongoose.Schema({
 
   guardianState: { type: String },
   guardianLga: { type: String },
+
+  status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
 }, { timestamps: true });
 
 export default mongoose.models.Student ||

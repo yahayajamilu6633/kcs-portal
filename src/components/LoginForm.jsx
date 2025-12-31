@@ -88,6 +88,7 @@ export default function LoginForm() {
             >
               <option value="student">Student</option>
               <option value="teacher">Teacher</option>
+              <option value="teacher">Admin</option>
             </select>
           </div>
 

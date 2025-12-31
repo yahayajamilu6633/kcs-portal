@@ -80,7 +80,7 @@ export default function SchoolTour() {
           autoplay={{ delay: 2000, disableOnInteraction: false }}
         >
           {[
-            "/images/lib.jpg",
+            "/images/lib1.jpg",
             "/images/lib2.jpg",
             "/images/lib3.jpg",
           ].map((img, i) => (
